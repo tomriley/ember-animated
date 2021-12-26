@@ -94,7 +94,7 @@ export default class AnimatedContainerComponent extends Component {
   private _startingUp = false;
   private sprite: Sprite | null = null;
 
-  constructor(properties: object | undefined) {
+  constructor(properties: Record<string, unknown> | undefined) {
     super(properties);
     this.get('motionService')
       .register(this)
@@ -151,7 +151,7 @@ export default class AnimatedContainerComponent extends Component {
     }
   }
 
-  @(task(function*(
+  @task(function* (
     this: AnimatedContainerComponent,
     duration: number,
     animationTask: Promise<void>,
@@ -197,6 +197,6 @@ export default class AnimatedContainerComponent extends Component {
 
     this.sprite!.unlock();
     this.sprite = null;
-  }).restartable())
+  }).restartable()
   animate!: ComputedProperty<Task>;
 }

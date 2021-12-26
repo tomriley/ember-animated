@@ -31,9 +31,6 @@ module.exports = {
     '@typescript-eslint/adjacent-overload-signatures': 'error',
     '@typescript-eslint/array-type': 'error',
     '@typescript-eslint/ban-types': 'error',
-    camelcase: 'off',
-    '@typescript-eslint/camelcase': 'error',
-    '@typescript-eslint/class-name-casing': 'error',
     indent: 'off',
     '@typescript-eslint/member-delimiter-style': 'error',
     '@typescript-eslint/consistent-type-assertions': 'error',
@@ -65,6 +62,7 @@ module.exports = {
     {
       files: [
         '.eslintrc.js',
+        '.prettierrc.js',
         '.template-lintrc.js',
         'ember-cli-build.js',
         '.eslintrc.js',
@@ -94,6 +92,11 @@ module.exports = {
         '@typescript-eslint/no-var-requires': 0,
         '@typescript-eslint/no-require-imports': 0,
       },
+    },
+    {
+      // test files
+      files: ['tests/**/*-test.{js,ts}'],
+      extends: ['plugin:qunit/recommended'],
     },
   ],
 };

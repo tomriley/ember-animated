@@ -1,11 +1,11 @@
 //BEGIN-SNIPPET svg-snippet.js
 import Component from '@ember/component';
-import { computed } from '@ember/object';
+import { computed, action } from '@ember/object';
 import moveSVG from 'ember-animated/motions/move-svg';
 import { parallel } from 'ember-animated';
 
 export default Component.extend({
-  bubbles: computed(function() {
+  bubbles: computed(function () {
     let list = [];
     for (let id = 0; id < 10; id++) {
       list.push({
@@ -18,7 +18,7 @@ export default Component.extend({
     return list;
   }),
 
-  moveThem: function*({ keptSprites }) {
+  moveThem: function* ({ keptSprites }) {
     keptSprites.forEach(
       parallel(
         moveSVG.property('cx'),
@@ -28,10 +28,8 @@ export default Component.extend({
     );
   },
 
-  actions: {
-    move() {
-      this.notifyPropertyChange('bubbles');
-    },
-  },
+  move: action(function () {
+    this.notifyPropertyChange('bubbles');
+  }),
 });
 //END-SNIPPET

@@ -77,10 +77,18 @@ export function current() {
 
 export async function childrenSettled() {
   return Promise.all(
-    ensureCurrent('childrenSettled').linked.map(child =>
+    ensureCurrent('childrenSettled').linked.map((child) =>
       child.promise.catch(() => null),
     ),
   );
+}
+
+interface TaskCancelationError extends Error {
+  message: string;
+}
+
+function isTaskCancelationError(x: unknown) {
+  return (x as TaskCancelationError).message === 'TaskCancelation';
 }
 
 interface StackEntry {
@@ -93,7 +101,7 @@ let onStack: (routine: MicroRoutine) => StackEntry | undefined;
 {
   let cur: MicroRoutine | undefined;
   let prior: StackEntry[] = [];
-  withCurrent = function(routine, fn) {
+  withCurrent = function (routine, fn) {
     prior.unshift({ microroutine: cur, throw: undefined });
     cur = routine;
     try {
@@ -113,11 +121,11 @@ let onStack: (routine: MicroRoutine) => StackEntry | undefined;
       }
     }
   };
-  getCurrent = function() {
+  getCurrent = function () {
     return cur;
   };
-  onStack = function(microroutine) {
-    return prior.find(entry => entry.microroutine === microroutine);
+  onStack = function (microroutine) {
+    return prior.find((entry) => entry.microroutine === microroutine);
   };
 }
 
@@ -176,8 +184,8 @@ class MicroRoutine {
           this.resolve(this.state.value);
         } else {
           Promise.resolve(this.state.value).then(
-            value => this.wake('fulfilled', value),
-            reason => this.wake('rejected', reason),
+            (value) => this.wake('fulfilled', value),
+            (reason) => this.wake('rejected', reason),
           );
         }
       } catch (err) {
@@ -185,15 +193,15 @@ class MicroRoutine {
           done: true,
           value: undefined,
         };
-        this.linked.forEach(microRoutine => {
+        this.linked.forEach((microRoutine) => {
           microRoutine.stop();
         });
-        if (err.message !== 'TaskCancelation') {
+        if (!isTaskCancelationError(err)) {
           this.reject(err);
           if (this.errorLogger) {
-            if (!loggedErrors.has(err)) {
-              loggedErrors.add(err);
-              this.errorLogger.call(null, err);
+            if (!loggedErrors.has(err as TaskCancelationError)) {
+              loggedErrors.add(err as TaskCancelationError);
+              this.errorLogger.call(null, err as TaskCancelationError);
             }
           }
         }
@@ -205,7 +213,7 @@ class MicroRoutine {
     if (this.state && isPromise(this.state.value)) {
       fireCancellation(this.state.value);
     }
-    this.linked.forEach(microRoutine => {
+    this.linked.forEach((microRoutine) => {
       microRoutine.stop();
     });
     let e = new Error('TaskCancelation');
@@ -239,7 +247,7 @@ function cancelGenerator(generator: Generator) {
   try {
     generator.throw!(e);
   } catch (err) {
-    if (err.message !== 'TaskCancelation') {
+    if (!isTaskCancelationError(err)) {
       throw err;
     }
   }
@@ -255,9 +263,9 @@ function isPromise(thing: any): thing is Promise<any> {
 // This allows point-free style, like:
 //   sprites.forEach(parallel(move, scale)).
 //
-export function parallel(...functions: Function[]) {
-  return function(...args: any[]) {
-    return Promise.all(functions.map(f => f.apply(null, args)));
+export function parallel(...functions: ((...args: any[]) => unknown)[]) {
+  return function (...args: any[]) {
+    return Promise.all(functions.map((f) => f.apply(null, args)));
   };
 }
 
@@ -267,9 +275,9 @@ export function parallel(...functions: Function[]) {
 // This allows point-free style, like:
 //   sprites.forEach(serial(scale, move)).
 //
-export function serial(...functions: Function[]) {
-  return function(...args: any[]) {
-    return spawnChild(function*() {
+export function serial(...functions: ((...args: any[]) => unknown)[]) {
+  return function (...args: any[]) {
+    return spawnChild(function* () {
       for (let fn of functions) {
         yield fn.apply(null, args);
       }

@@ -10,20 +10,22 @@ import Ember from 'ember';
 import { microwait } from '..';
 import { DEBUG } from '@glimmer/env';
 
+type HostObject = Record<string, any>;
+
 export function task(taskFn: (...args: any[]) => Generator) {
-  let tp = (_computed(function(this: object, propertyName: string) {
+  let tp = _computed(function (this: HostObject, propertyName: string) {
     return new Task(this, taskFn, tp, propertyName);
-  }) as unknown) as TaskProperty;
+  }) as unknown as TaskProperty;
 
   Object.setPrototypeOf(tp, TaskProperty.prototype);
-  return tp as ((proto: object, key: string) => any) & TaskProperty;
+  return tp as ((proto: any, key: string) => any) & TaskProperty;
 }
 
-function _computed(fn: (this: object, propertyName: string) => Task) {
+function _computed(fn: (this: HostObject, propertyName: string) => Task) {
   if (!gte('3.10.0')) {
     return computed(fn);
   }
-  let cp = function(proto: object, key: string) {
+  let cp = function (proto: HostObject, key: string) {
     if ((cp as any).setup !== undefined) {
       (cp as any).setup(proto, key);
     }
@@ -35,7 +37,7 @@ function _computed(fn: (this: object, propertyName: string) => Task) {
 
 let handlerCounter = 0;
 
-let BaseTaskProperty: { new (): object };
+let BaseTaskProperty: { new (): HostObject };
 
 if (gte('3.10.0')) {
   BaseTaskProperty = class {};
@@ -64,7 +66,7 @@ export class TaskProperty extends BaseTaskProperty {
     return this;
   }
 
-  setup(proto: object, taskName: string) {
+  setup(proto: HostObject, taskName: string) {
     // @ts-ignore: depending on the ember version we may or may not have a super
     // method.
     if (super.setup) {
@@ -73,7 +75,7 @@ export class TaskProperty extends BaseTaskProperty {
     }
     if (this._observes) {
       let handlerName = `_ember_animated_handler_${handlerCounter++}`;
-      (proto as any)[handlerName] = function() {
+      (proto as any)[handlerName] = function () {
         let task = this.get(taskName);
         scheduleOnce('actions', task, '_safePerform');
       };
@@ -86,7 +88,7 @@ export class TaskProperty extends BaseTaskProperty {
 }
 
 interface TaskPrivate {
-  context: object;
+  context: HostObject;
   implementation: (...args: unknown[]) => Generator;
   instances: Promise<void>[];
   taskProperty: TaskProperty;
@@ -103,7 +105,7 @@ export class Task {
   isRunning = false;
 
   constructor(
-    context: object,
+    context: any,
     implementation: TaskPrivate['implementation'],
     taskProperty: TaskProperty,
     name: string,
@@ -128,9 +130,9 @@ export class Task {
       );
     }
     cleanupOnDestroy(context, this);
-    return spawn(function*() {
+    return spawn(function* () {
       if (DEBUG) {
-        logErrors(error => {
+        logErrors((error) => {
           microwait().then(() => {
             throw error;
           });
@@ -157,7 +159,7 @@ export class Task {
     });
   }
   cancelAll() {
-    getPriv(this).instances.forEach(i => stop(i));
+    getPriv(this).instances.forEach((i) => stop(i));
   }
   _addInstance(i: Promise<void>) {
     getPriv(this).instances.push(i);
@@ -181,7 +183,7 @@ export class Task {
 // cribbed from machty's ember-concurrency
 function cleanupOnDestroy(
   owner: {
-    willDestroy?: Function & {
+    willDestroy?: ((...args: any[]) => void) & {
       __ember_processes_destroyers__?: (() => void)[];
     };
   },
@@ -196,13 +198,13 @@ function cleanupOnDestroy(
     let oldWillDestroy = owner.willDestroy;
     let disposers: (() => void)[] = [];
 
-    owner.willDestroy = function() {
+    owner.willDestroy = function () {
       for (let i = 0, l = disposers.length; i < l; i++) {
         disposers[i]();
       }
+      // @ts-ignore
       oldWillDestroy.apply(owner, arguments);
     };
-    /* eslint-disable-next-line @typescript-eslint/camelcase */
     owner.willDestroy.__ember_processes_destroyers__ = disposers;
   }
 
@@ -210,6 +212,7 @@ function cleanupOnDestroy(
     try {
       object.cancelAll();
     } catch (err) {
+      // @ts-ignore
       if (err.message !== 'TaskCancelation') {
         throw err;
       }
@@ -231,7 +234,7 @@ function drop(_task: Task, privTask: TaskPrivate) {
   }
 }
 
-function* withRunLoop(generator: Generator) {
+function* withRunLoop(generator: Generator): Generator {
   let state!: IteratorResult<any>;
   let threw: Error | undefined;
   let nextValue: any;
@@ -245,6 +248,7 @@ function* withRunLoop(generator: Generator) {
           state = generator.throw(nextValue);
         }
       } catch (err) {
+        // @ts-ignore
         threw = err;
       }
     });
@@ -268,5 +272,5 @@ function* withRunLoop(generator: Generator) {
 }
 
 export function timeout(ms: number) {
-  return new EmberPromise(resolve => setTimeout(resolve, ms));
+  return new EmberPromise((resolve) => setTimeout(resolve, ms));
 }

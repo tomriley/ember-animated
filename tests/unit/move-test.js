@@ -11,8 +11,8 @@ import { MotionTester, TimeControl } from 'ember-animated/test-support';
 
 let tester, environment, offsetParent, target, innerContent, time;
 
-module('Unit | Move', function(hooks) {
-  hooks.beforeEach(function(assert) {
+module('Unit | Move', function (hooks) {
+  hooks.beforeEach(function (assert) {
     assert.equalBounds = equalBounds;
     assert.approxEqualPixels = approxEqualPixels;
     assert.visuallyConstant = visuallyConstant;
@@ -44,11 +44,11 @@ module('Unit | Move', function(hooks) {
     innerContent.style.width = '400px';
   });
 
-  hooks.afterEach(function() {
+  hooks.afterEach(function () {
     time.finished();
   });
 
-  test('simple motion', function(assert) {
+  test('simple motion', function (assert) {
     assert.expect(2);
     let p = Sprite.offsetParentStartingAt(target);
     p.measureFinalBounds();
@@ -70,12 +70,12 @@ module('Unit | Move', function(hooks) {
 
     let done = assert.async();
     run(() => {
-      tester.run(s, { duration: 60 }).then(done, done);
+      tester.run(s, { duration: 60 }).finally(() => done());
       time.advance(60);
     });
   });
 
-  test('simple motion, interrupted', function(assert) {
+  test('simple motion, interrupted', function (assert) {
     target.style['margin-left'] = '0px';
     target.style['margin-top'] = '0px';
     target.style.position = 'relative';
@@ -134,7 +134,9 @@ module('Unit | Move', function(hooks) {
     });
   });
 
-  test('interrupting with same destination does not extend animation time', function(assert) {
+  test('interrupting with same destination does not extend animation time', function (assert) {
+    assert.expect(2);
+
     let p = Sprite.offsetParentStartingAt(target);
     p.measureFinalBounds();
     let s = Sprite.positionedStartingAt(target, p);
@@ -165,12 +167,12 @@ module('Unit | Move', function(hooks) {
         tester.run(newSprite, { duration: 1000 });
       });
       return time.advance(501).then(() => {
-        assert.ok(!tester.get('isAnimating'), 'should be finished by now');
+        assert.notOk(tester.get('isAnimating'), 'should be finished by now');
       });
     });
   });
 
-  test('overshooting motion', async function(assert) {
+  test('overshooting motion', async function (assert) {
     target.style['margin-left'] = '0px';
     target.style['margin-top'] = '0px';
     target.style.position = 'relative';
@@ -183,15 +185,15 @@ module('Unit | Move', function(hooks) {
     s.lock();
 
     let motion = new Move(s, {
-      easing: v => (v < 0.5 ? -v : 2 - v),
+      easing: (v) => (v < 0.5 ? -v : 2 - v),
     });
 
     tester.run(motion, { duration: 400 });
     await time.advance(100);
-    assert.equal(s.getCurrentBounds().left, -100);
+    assert.strictEqual(s.getCurrentBounds().left, -100);
     await time.advance(200);
-    assert.equal(s.getCurrentBounds().left, 500);
+    assert.strictEqual(s.getCurrentBounds().left, 500);
     await time.advance(100);
-    assert.equal(s.getCurrentBounds().left, 400);
+    assert.strictEqual(s.getCurrentBounds().left, 400);
   });
 });

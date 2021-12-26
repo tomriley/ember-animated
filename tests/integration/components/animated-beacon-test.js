@@ -1,15 +1,15 @@
 import { module, test } from 'qunit';
 import { setupRenderingTest } from 'ember-qunit';
 import { render, settled } from '@ember/test-helpers';
-import hbs from 'htmlbars-inline-precompile';
+import { hbs } from 'ember-cli-htmlbars';
 import { animationsSettled, bounds } from 'ember-animated/test-support';
 
-module('Integration | Component | animated-beacon', function(hooks) {
+module('Integration | Component | animated-beacon', function (hooks) {
   setupRenderingTest(hooks);
 
-  test('beacons are available in transitions', async function(assert) {
+  test('beacons are available in transitions', async function (assert) {
     assert.expect(1);
-    this.set('transition', function*({ beacons }) {
+    this.set('transition', function* ({ beacons }) {
       assert.ok(beacons.thegroup, 'expected one beacon');
     });
 
@@ -28,31 +28,31 @@ module('Integration | Component | animated-beacon', function(hooks) {
     await animationsSettled();
   });
 
-  test('it picks up correct bounds', async function(assert) {
+  test('it picks up correct bounds', async function (assert) {
     assert.expect(4);
 
     let alpha;
 
-    this.set('transition', function*({ insertedSprites, beacons }) {
+    this.set('transition', function* ({ insertedSprites, beacons }) {
       let sprite = insertedSprites[0];
       sprite.startAtSprite(beacons.thegroup);
       let value = bounds(sprite.element);
       let expected = bounds(alpha);
 
       // we should be positioned over the beacon
-      assert.equal(value.top, expected.top, 'top');
-      assert.equal(value.left, expected.left, 'left');
+      assert.strictEqual(value.top, expected.top, 'top');
+      assert.strictEqual(value.left, expected.left, 'left');
 
       // and our initialBounds dimensions match the beacon's
       // dimensions (the sprite's element physically does not -- it's
       // up to a motion like scale to decide to do that when it's
       // wanted)
-      assert.equal(
+      assert.strictEqual(
         beacons.thegroup.initialBounds.width,
         expected.width,
         'width',
       );
-      assert.equal(
+      assert.strictEqual(
         beacons.thegroup.initialBounds.height,
         expected.height,
         'height',
