@@ -1,7 +1,3 @@
-import {
-  classNames,
-  layout as templateLayout,
-} from '@ember-decorators/component';
 import { inject as service } from '@ember/service';
 import ComputedProperty, { alias } from '@ember/object/computed';
 import Component from '@ember/component';
@@ -30,9 +26,10 @@ import { Transition } from '../-private/transition';
   @class animated-orphans
   @public
 */
-@templateLayout(layout)
-@classNames('animated-orphans')
 export default class AnimatedOrphans extends Component {
+  classNames: string[] = this.classNames.concat('animated-orphans');
+  layout = layout;
+
   @service('-ea-motion')
   motionService!: MotionService;
 
@@ -48,15 +45,17 @@ export default class AnimatedOrphans extends Component {
   private _cycleCounter = 0;
 
   didInsertElement() {
+    super.didInsertElement();
     this._inserted = true;
-    this.get('motionService')
+    this.motionService
       .register(this)
       .observeOrphans(this.animateOrphans)
       .observeAnimations(this.reanimate);
   }
 
   willDestroyElement() {
-    this.get('motionService')
+    super.willDestroyElement();
+    this.motionService
       .unregister(this)
       .unobserveOrphans(this.animateOrphans)
       .unobserveAnimations(this.reanimate);

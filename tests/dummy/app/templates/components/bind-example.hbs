@@ -13,7 +13,12 @@
     </AnimatedContainer>
   {{/if}}
 
-  <button {{action "increment"}}>+</button>
-  <button {{action "decrement"}}>-</button>
-  <input type="checkbox" checked={{this.showBoth}} onchange={{action (mut this.showBoth) (not this.showBoth)}}>
+  <button type="button" {{on "click" this.increment}}>+</button>
+  <button type="button" {{on "click" this.decrement}}>-</button>
+  <input
+    type="checkbox"
+    aria-label="Toggle both left and right value visibility"
+    checked={{this.showBoth}}
+    {{on "change" this.toggleShowBoth}}
+  >
 </div>

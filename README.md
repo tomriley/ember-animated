@@ -11,7 +11,7 @@ Compatibility
 
 * Ember.js v3.12 or above
 * Ember CLI v2.13 or above
-* Node.js v10 or above
+* Node.js v12 or above
 
 
 Installation
@@ -20,8 +20,6 @@ Installation
 ```
 ember install ember-animated
 ```
-
-This repo is tested against Ember versions going back as far as 2.12.
 
 
 Contributing

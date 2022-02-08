@@ -1,5 +1,6 @@
-import Component from '@ember/component';
-import { A } from '@ember/array';
+/* eslint-disable require-yield */
+import Component from '@glimmer/component';
+import { tracked } from '@glimmer/tracking';
 import { action } from '@ember/object';
 import move from 'ember-animated/motions/move';
 import { fadeIn, fadeOut } from 'ember-animated/motions/opacity';
@@ -18,13 +19,10 @@ const MESSAGES = [
   "I'd rather be sailing.",
 ];
 
-export default Component.extend({
-  init() {
-    this._super(...arguments);
-    this.set('notifications', A([]));
-  },
+export default class IndexDemo2 extends Component {
+  @tracked notifications = [];
 
-  nextId: 0,
+  @tracked nextId = 0;
 
   *originalTransition({ insertedSprites, removedSprites, keptSprites }) {
     for (let sprite of insertedSprites) {
@@ -39,7 +37,7 @@ export default Component.extend({
     for (let sprite of removedSprites) {
       fadeOut(sprite);
     }
-  },
+  }
 
   *separateTransition({ insertedSprites, removedSprites, keptSprites }) {
     for (let sprite of insertedSprites) {
@@ -54,37 +52,45 @@ export default Component.extend({
     for (let sprite of removedSprites) {
       fadeOut(sprite);
     }
-  },
+  }
 
-  createNotification: action(function () {
-    let id = this.get('nextId');
-    this.get('notifications').pushObject({
-      id,
-      text: MESSAGES[id % MESSAGES.length],
-    });
+  @action createNotification() {
+    let id = this.nextId;
+    this.notifications = [
+      ...this.notifications,
+      {
+        id,
+        text: MESSAGES[id % MESSAGES.length],
+      },
+    ];
 
-    this.incrementProperty('nextId');
-  }),
+    this.nextId++;
+  }
 
-  destroyNotification: action(function (notification) {
-    this.get('notifications').removeObject(notification);
-  }),
+  @action destroyNotification(notification) {
+    let i = this.notifications.findIndex((n) => n === notification);
+    this.notifications.splice(i, 1);
 
-  templateDiff: dedent`
-      {{#animated-each notifications use=transition as |notification|}}
+    // eslint-disable-next-line no-self-assign
+    this.notifications = this.notifications; // trigger autotracking
+  }
+
+  templateDiff = dedent`
+      {{#animated-each this.notifications use=this.transition as |notification|}}
         <NotificationCard @notification=notification />
       {{/animated-each}}
-  `,
+  `;
 
-  componentDiff: dedent`
-      import Component from '@ember/component';
+  componentDiff = dedent`
+      import Component from '@glimmer/component';
+      import { tracked } from '@glimmer/tracking';
     - import fade from 'ember-animated/transitions/fade';
     + import move from 'ember-animated/motions/move';
     + import { fadeOut } from 'ember-animated/motions/opacity';
 
-      export default Component.extend({
+      export default class extends Component {
 
-    -   transition: fade
+    -   transition = fade;
     +   * transition({ keptSprites, insertedSprites, removedSprites }) {
     +     for (let sprite of insertedSprites) {
     +       sprite.startTranslatedBy(0, -sprite.finalBounds.height);
@@ -100,6 +106,6 @@ export default Component.extend({
     +     }
     +   }
 
-      });
-  `,
-});
+      }
+  `;
+}
